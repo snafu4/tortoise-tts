@@ -1,7 +1,7 @@
 import spacy
 import threading
 import socket
-from tortoise.api_fast import TextToSpeech
+from api_fast import TextToSpeech
 from utils.audio import load_voices
 
 tts = TextToSpeech()

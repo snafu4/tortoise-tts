@@ -3,7 +3,7 @@ import os
 import torch
 
 from api import TextToSpeech
-from tortoise.utils.audio import load_audio, get_voices
+from utils.audio import load_audio, get_voices
 
 """
 Dumps the conditioning latents for the specified voice to disk. These are expressive latents which can be used for

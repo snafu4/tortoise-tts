@@ -3,8 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch import einsum
 
-from tortoise.models.arch_util import AttentionBlock
-from tortoise.models.xtransformers import ContinuousTransformerWrapper, Encoder
+from models.arch_util import AttentionBlock
+from models.xtransformers import ContinuousTransformerWrapper, Encoder
 
 
 def exists(val):
