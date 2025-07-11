@@ -9,9 +9,9 @@ import time
 import torch
 import torchaudio
 
-from tortoise.api import MODELS_DIR, TextToSpeech
-from tortoise.utils.audio import get_voices, load_voices, load_audio
-from tortoise.utils.text import split_and_recombine_text
+from api import MODELS_DIR, TextToSpeech
+from utils.audio import get_voices, load_voices, load_audio
+from utils.text import split_and_recombine_text
 
 parser = argparse.ArgumentParser(
     description='TorToiSe is a text-to-speech program that is capable of synthesizing speech '

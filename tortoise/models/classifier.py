@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from tortoise.models.arch_util import Upsample, Downsample, normalization, zero_module, AttentionBlock
+from models.arch_util import Upsample, Downsample, normalization, zero_module, AttentionBlock
 
 
 class ResBlock(nn.Module):
