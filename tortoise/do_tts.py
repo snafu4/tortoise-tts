@@ -6,6 +6,7 @@ import torchaudio
 
 from api import TextToSpeech, MODELS_DIR
 from utils.audio import load_voices
+from utils.text import split_and_recombine_text
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -30,6 +31,13 @@ if __name__ == '__main__':
     os.makedirs(args.output_path, exist_ok=True)
     tts = TextToSpeech(models_dir=args.model_dir, use_deepspeed=args.use_deepspeed, kv_cache=args.kv_cache, half=args.half)
 
+    if '|' in args.text:
+        print("Found the '|' character in your text, which I will use as a cue for where to split it up. If this was not" \
+              " your intent, please remove all '|' characters from the input.")
+        texts = args.text.split('|')
+    else:
+        texts = split_and_recombine_text(args.text)
+
     selected_voices = args.voice.split(',')
     for k, selected_voice in enumerate(selected_voices):
         if '&' in selected_voice:
@@ -38,15 +46,26 @@ if __name__ == '__main__':
             voice_sel = [selected_voice]
         voice_samples, conditioning_latents = load_voices(voice_sel)
 
-        gen, dbg_state = tts.tts_with_preset(args.text, k=args.candidates, voice_samples=voice_samples, conditioning_latents=conditioning_latents,
-                                  preset=args.preset, use_deterministic_seed=args.seed, return_deterministic_state=True, cvvp_amount=args.cvvp_amount)
-        if isinstance(gen, list):
-            for j, g in enumerate(gen):
-                torchaudio.save(os.path.join(args.output_path, f'{selected_voice}_{k}_{j}.wav'), g.squeeze(0).cpu(), 24000)
-        else:
-            torchaudio.save(os.path.join(args.output_path, f'{selected_voice}_{k}.wav'), gen.squeeze(0).cpu(), 24000)
+        candidate_parts = [[] for _ in range(args.candidates)]
+        dbg_states = []
+        for text in texts:
+            gen, dbg_state = tts.tts_with_preset(text, k=args.candidates, voice_samples=voice_samples,
+                                  conditioning_latents=conditioning_latents,
+                                  preset=args.preset, use_deterministic_seed=args.seed,
+                                  return_deterministic_state=True, cvvp_amount=args.cvvp_amount)
+            dbg_states.append(dbg_state)
+            if isinstance(gen, list):
+                for j, g in enumerate(gen):
+                    candidate_parts[j].append(g.squeeze(0).cpu())
+            else:
+                candidate_parts[0].append(gen.squeeze(0).cpu())
+
+        for j, parts in enumerate(candidate_parts):
+            audio = torch.cat(parts, dim=-1)
+            suffix = f'_{k}_{j}' if args.candidates > 1 else f'_{k}'
+            torchaudio.save(os.path.join(args.output_path, f'{selected_voice}{suffix}.wav'), audio, 24000)
 
         if args.produce_debug_state:
             os.makedirs('debug_states', exist_ok=True)
-            torch.save(dbg_state, f'debug_states/do_tts_debug_{selected_voice}.pth')
+            torch.save(dbg_states, f'debug_states/do_tts_debug_{selected_voice}.pth')
 
